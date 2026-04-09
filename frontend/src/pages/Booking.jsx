@@ -18,7 +18,7 @@ const Booking = () => {
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        axios.get(`http://localhost:5000/api/services/${serviceId}`)
+        axios.get(`https://web-verse-sanjana-yadav.vercel.app/api/services/${serviceId}`)
             .then(res => setService(res.data))
             .catch(err => console.error(err));
     }, [serviceId]);
@@ -63,7 +63,7 @@ const Booking = () => {
 
         try {
             await axios.post(
-                'http://localhost:5000/api/bookings',
+                'https://web-verse-sanjana-yadav.vercel.app/api/bookings',
                 {
                     ...formData,
                     service: serviceId,

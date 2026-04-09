@@ -143,5 +143,25 @@ router.get('/', async (req, res) => {
   }
 });
 
+// ✅ Cancel Booking (User)
+router.put('/:id', auth, async (req, res) => {
+  try {
+    const booking = await Booking.findByIdAndUpdate(
+      req.params.id,
+      { status: 'cancelled' },
+      { new: true }
+    );
+
+    if (!booking) {
+      return res.status(404).json({ msg: 'Booking not found' });
+    }
+
+    res.json({ msg: 'Booking cancelled', booking });
+  } catch (error) {
+    console.error('❌ Cancel Error:', error);
+    res.status(500).json({ msg: 'Error cancelling booking' });
+  }
+});
+
 
 module.exports = router;

@@ -4,7 +4,7 @@ import axios from 'axios';
 const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
 
-axios.defaults.baseURL = 'http://localhost:5000';
+axios.defaults.baseURL = 'https://web-verse-sanjana-yadav.vercel.app';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
