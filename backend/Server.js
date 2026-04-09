@@ -5,25 +5,16 @@ require('dotenv').config();
 
 const app = express();
 
-// Middleware
-const allowedOrigins = [
-  "http://localhost:5173",
-];
-
+// ✅ CORS (temporary open for testing)
 app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("CORS not allowed"));
-    }
-  },
+  origin: "*",
   credentials: true
 }));
+
 app.use(express.json());
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/neighbourhood')
+mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log("MongoDB Connected"))
   .catch(err => console.log("DB Error:", err));
 
@@ -36,11 +27,12 @@ app.get('/', (req, res) => {
 app.use('/api/auth', require('./src/routes/auth'));
 app.use('/api/services', require('./src/routes/services'));
 app.use('/api/bookings', require('./src/routes/bookings'));
+
 // Error Handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: "Something went wrong" });
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+module.exports = app;
