@@ -6,17 +6,26 @@ require('dotenv').config();
 const app = express();
 
 // Middleware
+const allowedOrigins = [
+  "http://localhost:5173",
+];
+
 app.use(cors({
-  origin: "http://localhost:5173", // ✅ ONLY this (no extra quotes)
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("CORS not allowed"));
+    }
+  },
   credentials: true
 }));
-
 app.use(express.json());
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/neighbourhood')
-.then(() => console.log("MongoDB Connected"))
-.catch(err => console.log("DB Error:", err));
+  .then(() => console.log("MongoDB Connected"))
+  .catch(err => console.log("DB Error:", err));
 
 // Test Route
 app.get('/', (req, res) => {
