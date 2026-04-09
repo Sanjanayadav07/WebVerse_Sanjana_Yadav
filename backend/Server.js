@@ -7,7 +7,10 @@ const app = express();
 
 // ✅ CORS (temporary open for testing)
 app.use(cors({
-  origin: "*",
+  origin: [
+    "http://localhost:5173",
+    "https://web-verse-sanjana-yadav.vercel.app"
+  ],
   credentials: true
 }));
 
