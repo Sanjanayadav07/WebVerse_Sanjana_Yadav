@@ -4,6 +4,7 @@ const User = require('../models/User');
 const Service = require('../models/Service');
 const router = express.Router();
 const auth = require('../middleware/auth');
+const mongoose = require('mongoose');
 
 // ✅ Create Booking (Public - Anyone can book)
 router.post('/', auth, async (req, res) => {
@@ -39,7 +40,7 @@ router.post('/', auth, async (req, res) => {
       location,
       notes,
       price: bookingPrice || serviceDoc.price,
-      user: req.user._id , // fallback for older token structure
+      user: req.user._id, // fallback for older token structure
       //totalPrice: totalPrice || serviceDoc.price // 1 hour default
     });
 
@@ -71,43 +72,26 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
-// ✅ Get My Bookings (Public - for demo)
-/*
+
 router.get('/my-bookings', async (req, res) => {
   try {
     const { userId } = req.query;
 
-    if (!userId) {
-      return res.status(400).json({ msg: 'User ID required' });
+    // 1. ADD THIS CHECK: If no ID is provided, don't query the DB
+    if (!userId || userId === 'undefined') {
+      return res.json([]); 
     }
 
-    const bookings = await Booking.find({ user: userId })
-      .populate('service', 'name price icon category')
-      .populate('user', 'name email')
-      .sort({ createdAt: -1 })
-      .limit(10);
-
-    console.log(`📋 ${bookings.length} bookings found for user ${userId}`);
-    res.json(bookings);
-
-  } catch (error) {
-    console.error('❌ My Bookings Error:', error);
-    res.status(500).json({ msg: 'Failed to fetch bookings' });
-  }
-});*/
-
-router.get('/my-bookings', async (req, res) => {
-  try {
-    const { userId } = req.query;
-
-    const bookings = await Booking.find({ user: userId })
+    const bookings = await Booking.find({
+      user: new mongoose.Types.ObjectId(userId)
+    })
       .populate('service', 'name price category')
       .sort({ createdAt: -1 });
 
-    console.log("Bookings found:", bookings);
-
+    console.log("Bookings found for user:", userId, bookings.length);
     res.json(bookings);
   } catch (error) {
+    console.error("Fetch Error:", error);
     res.status(500).json({ msg: 'Server error' });
   }
 });

@@ -1,3 +1,4 @@
+
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
@@ -97,6 +98,7 @@ router.post('/login', async (req, res) => {
 });
 
 // ---------------- Get current user ----------------
+/*
 router.get('/me', authMiddleware, (req, res) => {
   res.json({ user: {
     id: req.user._id,
@@ -105,6 +107,41 @@ router.get('/me', authMiddleware, (req, res) => {
     phone: req.user.phone,
     role: req.user.role
   }});
+});*/
+
+//ADD THIS ENDPOINT
+router.get('/me', async (req, res) => {
+  try {
+    console.log('🔐 /me called'); // Debug
+
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    if (!token) {
+      return res.status(401).json({ msg: 'No token' });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'supersecretkey123');
+    console.log('✅ Decoded token:', decoded); // Debug
+
+    const user = await User.findById(decoded.userId).select('-password');
+    if (!user) {
+      return res.status(401).json({ msg: 'User not found' });
+    }
+
+    // ✅ Frontend expects 'id' field
+    res.json({
+      user: {
+        id: user._id,     // ✅ id field
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        phone: user.phone
+      }
+    });
+  } catch (error) {
+    console.error('❌ /me error:', error.message);
+    res.status(401).json({ msg: 'Invalid token' });
+  }
 });
 
 module.exports = router;
+

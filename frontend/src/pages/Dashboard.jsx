@@ -3,33 +3,99 @@ import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import { FaCalendarCheck, FaMapMarkerAlt, FaClock } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
-
 const Dashboard = () => {
   const { user, logout } = useAuth();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-  if (user) {
-    fetchBookings();
-  }
-}, [user]);
-
+  //. Define the function
+  /*
   const fetchBookings = async () => {
-    try {
-      if (!user?._id) return;
+    // Check every possible ID field name
 
-      const res = await axios.get(
-        `/api/bookings/my-bookings?userId=${user._id}`
-      );
-      console.log("Bookings API:", res.data);
-      setBookings(res.data);
+    const id = user?._id || user?.id || user?.userId;
+
+    if (!id) {
+      console.log("No ID found in user object yet:", user);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      console.log("Fetching bookings for ID:", id);
+      const res = await axios.get(`/api/bookings/my-bookings?userId=${id}`);
+
+      console.log("Server Response:", res.data);
+
+      // Ensure we are setting an array
+      const data = Array.isArray(res.data) ? res.data : (res.data.bookings || []);
+      setBookings(data);
+    } catch (error) {
+      console.error('Error fetching bookings:', error);
+    } finally {
+      setLoading(false);
+    }
+  };*/
+
+  // 1. Define the updated function
+  const fetchBookings = async () => {
+    // Check every possible ID field name
+    const id = user?._id || user?.id || user?.userId;
+    const isAdmin = user?.role === 'admin'; // Admin check logic
+
+    // Agar na ID hai na hi banda Admin hai, toh stop karein
+    if (!id && !isAdmin) {
+      console.log("No ID found in user object yet:", user);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // 💡 LOGIC: Admin hai toh saari bookings mangwao, user hai toh sirf uski ID wali
+      let url = isAdmin
+        ? `/api/bookings?key=admin123`
+        : `/api/bookings/my-bookings?userId=${id}`;
+
+      console.log("Fetching from URL:", url);
+      const res = await axios.get(url);
+
+      console.log("Server Response:", res.data);
+
+      const data = Array.isArray(res.data) ? res.data : (res.data.bookings || []);
+      setBookings(data);
     } catch (error) {
       console.error('Error fetching bookings:', error);
     } finally {
       setLoading(false);
     }
   };
+
+  // 2. Trigger the function
+  useEffect(() => {
+    if (user) {
+      fetchBookings();
+    }
+  }, [user]); // Only depends on the user object
+
+  /*
+    const fetchBookings = async () => {
+      try {
+        if (!user?._id) return;
+  
+        const res = await axios.get(
+          `/api/bookings/my-bookings?userId=${user._id}`
+        );
+        console.log("Bookings API:", res.data);
+        setBookings(res.data);
+      } catch (error) {
+        console.error('Error fetching bookings:', error);
+      } finally {
+        setLoading(false);
+      }
+    };*/
+
 
   const cancelBooking = async (id) => {
     try {
@@ -39,6 +105,20 @@ const Dashboard = () => {
       fetchBookings();
     } catch {
       alert("Error cancelling booking");
+    }
+  };
+
+  const approveBooking = async (id) => {
+    try {
+      // Backend route: PATCH /api/bookings/:id/status?key=admin123
+      await axios.patch(`/api/bookings/${id}/status?key=admin123`, {
+        status: 'confirmed'
+      });
+      alert("Booking Approved Successfully!");
+      fetchBookings(); // List refresh karne ke liye
+    } catch (error) {
+      console.error("Approval error:", error);
+      alert("Error: Admin key missing or server error");
     }
   };
 
@@ -62,12 +142,15 @@ const Dashboard = () => {
 
         {/* Header */}
         <div className="text-center mb-8 sm:mb-12">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">
-            Welcome back, {user.name} 👋
+        
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold">
+            {user?.role === 'admin' ? "Admin Control Panel 🛡️" : `Welcome back, ${user?.name} 👋`}
           </h1>
 
           <p className="text-gray-600 text-sm sm:text-base">
             Team ID: <span className="font-bold text-blue-600">KPT016</span>
+            {/* Admin ko extra info dikhane ke liye */}
+            {user.role === 'admin' && <span className="ml-2 bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs">ADMIN MODE</span>}
           </p>
 
           <button
@@ -151,6 +234,16 @@ const Dashboard = () => {
                     <h3 className="text-lg sm:text-xl font-bold text-blue-600">
                       ₹{booking.price || booking.service?.price}
                     </h3>
+
+                    {/* ✅ APPROVE BUTTON (Only for Admin) */}
+                    {user?.role === 'admin' && booking.status === 'pending' && (
+                      <button
+                        onClick={() => approveBooking(booking._id)}
+                        className="mt-2 mr-2 w-full sm:w-auto bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition"
+                      >
+                        Approve
+                      </button>
+                    )}
 
                     {booking.status !== 'cancelled' && (
                       <button

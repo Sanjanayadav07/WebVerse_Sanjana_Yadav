@@ -21,10 +21,6 @@ const Services = () => {
       });
   }, []);
 
-  /*const handleBooking = (id) => {
-    navigate(`/book/${id}`);
-  };*/
-
 
   const { user } = useAuth();
   const handleBooking = (serviceId) => {
